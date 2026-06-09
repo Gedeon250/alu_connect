@@ -1,23 +1,25 @@
-import 'package:flutter/material.dart';
-
 class Community {
   final String id;
   final String name;
   final String description;
-  final int    memberCount;
-  final String category;   // e.g. 'Tech', 'Leadership', 'Arts'
-  final Color  iconColor;  // background color for the community avatar
-  final String iconEmoji;  // emoji displayed inside the avatar
-  bool         isJoined;
+  final String category;
+  final String imageUrl;
+  final int memberCount;
+  final String leaderId;
+  final String leaderName;
+  final DateTime createdAt;
+  bool isJoined;
 
   Community({
     required this.id,
     required this.name,
     required this.description,
-    required this.memberCount,
     required this.category,
-    required this.iconColor,
-    required this.iconEmoji,
+    required this.imageUrl,
+    required this.memberCount,
+    required this.leaderId,
+    required this.leaderName,
+    required this.createdAt,
     this.isJoined = false,
   });
 }

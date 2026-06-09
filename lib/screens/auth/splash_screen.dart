@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
-import '../../services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -9,131 +10,112 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with TickerProviderStateMixin {
-  AnimationController? _logoController;
-  AnimationController? _textController;
-
-  Animation<double>? _logoScale;
-  Animation<double>? _logoFade;
-  Animation<double>? _textFade;
-  Animation<Offset>?  _textSlide;
+class _SplashScreenState extends State<SplashScreen> {
+  // Simple opacity for fade-in effect
+  double _opacity = 0.0;
 
   @override
   void initState() {
     super.initState();
 
-    _logoController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    );
-    _logoScale = Tween<double>(begin: 0.3, end: 1.0).animate(
-      CurvedAnimation(parent: _logoController!, curve: Curves.elasticOut),
-    );
-    _logoFade = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _logoController!,
-        curve: const Interval(0.0, 0.5, curve: Curves.easeIn),
-      ),
-    );
+    // Fade in after a short delay
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() {
+          _opacity = 1.0;
+        });
+      }
+    });
 
-    _textController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-    _textFade = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _textController!, curve: Curves.easeIn),
-    );
-    _textSlide = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _textController!, curve: Curves.easeOut));
-
-    _logoController!.forward().then((_) {
-      _textController!.forward().then((_) {
-        Future.delayed(const Duration(milliseconds: 1200), _checkLoginState);
-      });
+    // Navigate after 2.5 seconds
+    Future.delayed(const Duration(milliseconds: 2500), () {
+      _navigate();
     });
   }
 
-  Future<void> _checkLoginState() async {
-    final loggedIn = await AuthService.isLoggedIn();
+  void _navigate() {
     if (!mounted) return;
-    Navigator.pushReplacementNamed(context, loggedIn ? '/home' : '/login');
-  }
 
-  @override
-  void dispose() {
-    _logoController?.dispose();
-    _textController?.dispose();
-    super.dispose();
+    bool loggedIn = context.read<AuthProvider>().isAuthenticated;
+
+    if (loggedIn) {
+      Navigator.pushReplacementNamed(context, '/main');
+    } else {
+      Navigator.pushReplacementNamed(context, '/onboarding');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Center(
+      body: Center(
+        child: AnimatedOpacity(
+          opacity: _opacity,
+          duration: const Duration(milliseconds: 900),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              AnimatedBuilder(
-                animation: _logoController ?? const AlwaysStoppedAnimation(1.0),
-                builder: (_, __) => FadeTransition(
-                  opacity: _logoFade ?? const AlwaysStoppedAnimation(1.0),
-                  child: Transform.scale(
-                    scale: _logoScale?.value ?? 1.0,
-                    child: Container(
-                      width: 96,
-                      height: 96,
-                      decoration: BoxDecoration(
-                        color: AppColors.gold,
-                        borderRadius: BorderRadius.circular(AppRadius.xl),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.gold.withValues(alpha: 0.35),
-                            blurRadius: 32,
-                            spreadRadius: 4,
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.change_history_rounded,
-                        size: 60,
-                        color: AppColors.background,
-                      ),
+              // Orange A logo
+              Container(
+                width: 88,
+                height: 88,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.35),
+                      blurRadius: 32,
+                      offset: const Offset(0, 12),
+                    ),
+                  ],
+                ),
+                child: const Center(
+                  child: Text(
+                    'A',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 46,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
                 ),
               ),
-
-              const SizedBox(height: AppSpacing.lg),
-
-              FadeTransition(
-                opacity: _textFade ?? const AlwaysStoppedAnimation(1.0),
-                child: SlideTransition(
-                  position: _textSlide ?? const AlwaysStoppedAnimation(Offset.zero),
-                  child: Column(
-                    children: [
-                      Text('ALU', style: AppTextStyles.displayLarge.copyWith(letterSpacing: 3)),
-                      Text('Intercampus', style: AppTextStyles.bodyMedium.copyWith(fontSize: 16)),
-                      Text('Connect', style: AppTextStyles.displayMedium.copyWith(color: AppColors.gold)),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text('Connect. Collaborate. Lead together.', style: AppTextStyles.labelMedium),
-                    ],
-                  ),
+              const SizedBox(height: 22),
+              const Text(
+                'ALU Connect',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
-
-              const SizedBox(height: AppSpacing.xxl),
-
-              FadeTransition(
-                opacity: _textFade ?? const AlwaysStoppedAnimation(1.0),
-                child: const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(color: AppColors.gold, strokeWidth: 2),
+              const SizedBox(height: 5),
+              const Text(
+                'Intercampus',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 2,
+                ),
+              ),
+              const SizedBox(height: 5),
+              const Text(
+                'Connect. Collaborate. Lead.',
+                style: TextStyle(
+                  color: AppColors.textMuted,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 48),
+              const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  valueColor: AlwaysStoppedAnimation(AppColors.primary),
                 ),
               ),
             ],

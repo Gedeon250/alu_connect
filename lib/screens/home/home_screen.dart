@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/events_provider.dart';
 import '../../theme/app_theme.dart';
-import '../../services/auth_service.dart';
-import '../../data/mock_data.dart';
-import '../../models/event.dart';
 import '../../widgets/event_card.dart';
+import '../../widgets/custom_text_field.dart' as ctf;
+import '../home/event_detail_screen.dart';
 
-// Home feed screen — Member 2 owns the body content.
-// Member 1 (Gedeon) owns: dynamic username, working category filter,
-// Campus Pulse strip, and the "For You" section driven by interests.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -16,362 +15,274 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String _userName       = '';
-  String _campus         = '';
-  String _selectedFilter = 'All';
-  List<String> _userInterests = [];
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _searchQuery = '';
 
   final List<String> _filters = [
-    'All', 'Events', 'Opportunities', 'Clubs', 'Academics',
+    'All', 'Events', 'Opportunities', 'Hackathons', 'Workshops', 'Community'
   ];
 
   @override
-  void initState() {
-    super.initState();
-    _loadUserData();
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
   }
 
-  Future<void> _loadUserData() async {
-    final userData  = await AuthService.getUserData();
-    final interests = await AuthService.getInterests();
-    if (!mounted) return;
-    setState(() {
-      _userName      = userData['name']   ?? 'Student';
-      _campus        = userData['campus'] ?? '';
-      _userInterests = interests;
-    });
-  }
-
-  // Returns the first name only (e.g. "Aline Umuhoza" → "Aline")
-  String get _firstName {
-    final parts = _userName.trim().split(' ');
-    return parts.isNotEmpty ? parts.first : _userName;
-  }
-
-  // Events filtered by the selected category chip
-  List<Event> get _filteredEvents {
-    if (_selectedFilter == 'All') return mockEvents.where((e) => !e.isFeatured).take(5).toList();
-    return mockEvents
-        .where((e) => !e.isFeatured &&
-            e.category.toLowerCase() == _selectedFilter.toLowerCase())
-        .toList();
-  }
-
-  // "For You" events — those matching any of the user's selected interests
-  List<Event> get _forYouEvents {
-    if (_userInterests.isEmpty) return [];
-    return mockEvents.where((e) {
-      return e.tags.any((tag) => _userInterests.any(
-          (interest) => interest.toLowerCase().contains(tag.toLowerCase()) ||
-              tag.toLowerCase().contains(interest.toLowerCase())));
-    }).take(3).toList();
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    final featured    = mockEvents.where((e) => e.isFeatured).toList();
-    final forYou      = _forYouEvents;
-    final latest      = _filteredEvents;
+    final auth = context.watch<AuthProvider>();
+    final events = context.watch<EventsProvider>();
+    final user = auth.currentUser;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-
-            // ── Greeting + avatar ─────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Reads real name from SharedPreferences
-                          Text(
-                            'Hi, $_firstName! 👋',
-                            style: AppTextStyles.displayMedium,
-                          ),
-                          Text(
-                            _campus.isEmpty
-                                ? 'What\'s happening today?'
-                                : '$_campus · What\'s happening?',
-                            style: AppTextStyles.bodyMedium,
-                          ),
-                        ],
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => Navigator.pushNamed(context, '/profile'),
-                      child: CircleAvatar(
-                        radius: 22,
-                        backgroundColor: AppColors.gold,
-                        child: Text(
-                          _firstName.isNotEmpty ? _firstName[0].toUpperCase() : 'A',
-                          style: AppTextStyles.headingLarge
-                              .copyWith(color: AppColors.background),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // ── Campus Pulse strip ────────────────────────────────────────
-            // Unique feature: a live snapshot of campus activity.
-            // Shows students at a glance how active their campus is —
-            // designed specifically for ALU's two-campus intercampus dynamic.
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceElevated,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _PulseStat(icon: '📅', value: '6', label: 'This week'),
-                      _dividerDot(),
-                      _PulseStat(icon: '👥', value: '245', label: 'Students active'),
-                      _dividerDot(),
-                      _PulseStat(icon: '🏛️', value: '12', label: 'Clubs active'),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            // ── Search bar ────────────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: TextField(
-                  style: AppTextStyles.bodyLarge,
-                  onTap: () => Navigator.pushNamed(context, '/explore'),
-                  readOnly: true,
-                  decoration: const InputDecoration(
-                    hintText: 'Search opportunities, events, people...',
-                    prefixIcon: Icon(Icons.search, color: AppColors.textMuted),
-                  ),
-                ),
-              ),
-            ),
-
-            const SliverToBoxAdapter(child: SizedBox(height: 12)),
-
-            // ── Category filter chips (actually work!) ────────────────────
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: 44,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: _filters.length,
-                  itemBuilder: (ctx, i) {
-                    final label      = _filters[i];
-                    final isSelected = label == _selectedFilter;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 10),
-                      child: ChoiceChip(
-                        label: Text(label),
-                        selected: isSelected,
-                        selectedColor: AppColors.gold,
-                        backgroundColor: AppColors.surface,
-                        labelStyle: AppTextStyles.labelMedium.copyWith(
-                          color: isSelected
-                              ? AppColors.background
-                              : AppColors.textSecondary,
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.w400,
-                        ),
-                        onSelected: (_) =>
-                            setState(() => _selectedFilter = label),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-
-            // ── "For You" section (personalised by interests) ─────────────
-            // Only shown when user completed interests onboarding.
-            // This is a unique feature — the sample has no personalisation.
-            if (forYou.isNotEmpty) ...[
+        child: RefreshIndicator(
+          color: AppColors.primary,
+          backgroundColor: AppColors.surface,
+          onRefresh: () => events.refresh(),
+          child: CustomScrollView(
+            slivers: [
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                  child: Row(
-                    children: [
-                      Text('For You', style: AppTextStyles.headingLarge),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppColors.gold.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          _userInterests.take(2).join(' · '),
-                          style: AppTextStyles.labelMedium
-                              .copyWith(color: AppColors.gold, fontSize: 10),
-                        ),
-                      ),
-                    ],
+                  child: _buildHeader(user?.name ?? 'Student')),
+              SliverToBoxAdapter(child: _buildSearchBar()),
+              SliverToBoxAdapter(child: _buildCategoryChips()),
+              SliverToBoxAdapter(child: _buildFeaturedSection(events)),
+              SliverToBoxAdapter(
+                  child: _buildSectionHeader(
+                      'Latest Opportunities',
+                      _searchQuery.isNotEmpty
+                          ? '${events.search(_searchQuery).length} results'
+                          : '${events.filteredEvents.length} items')),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, i) {
+                      final list = _searchQuery.isNotEmpty
+                          ? events.search(_searchQuery)
+                          : events.filteredEvents;
+                      if (i >= list.length) return null;
+                      return EventCard(
+                        event: list[i],
+                        onTap: () => _openDetail(context, list[i].id),
+                      );
+                    },
+                    childCount: _searchQuery.isNotEmpty
+                        ? events.search(_searchQuery).length
+                        : events.filteredEvents.length,
                   ),
-                ),
-              ),
-              SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (ctx, i) => Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: EventCard(event: forYou[i]),
-                  ),
-                  childCount: forYou.length,
                 ),
               ),
             ],
-
-            // ── Featured section ──────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Featured', style: AppTextStyles.headingLarge),
-                    TextButton(
-                      onPressed: () => Navigator.pushNamed(context, '/explore'),
-                      child: Text(
-                        'See all',
-                        style: AppTextStyles.labelMedium
-                            .copyWith(color: AppColors.gold),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            if (featured.isNotEmpty)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: EventCard(event: featured.first, isFeatured: true),
-                ),
-              ),
-
-            // ── Latest section (filtered by chip selection) ───────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                child: Text(
-                  _selectedFilter == 'All'
-                      ? 'Latest Opportunities'
-                      : _selectedFilter,
-                  style: AppTextStyles.headingLarge,
-                ),
-              ),
-            ),
-
-            // Empty state when filter has no results
-            if (latest.isEmpty)
-              SliverToBoxAdapter(
-                child: _EmptyState(
-                  icon: Icons.search_off_rounded,
-                  message: 'No $_selectedFilter events right now.',
-                  hint: 'Check back soon or explore other categories.',
-                ),
-              )
-            else
-              SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (ctx, i) => Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: EventCard(event: latest[i]),
-                  ),
-                  childCount: latest.length,
-                ),
-              ),
-
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _dividerDot() => Container(
-        width: 4,
-        height: 4,
-        decoration: const BoxDecoration(
-          color: AppColors.border,
-          shape: BoxShape.circle,
-        ),
-      );
-}
-
-// ── Campus Pulse stat item ─────────────────────────────────────────────────────
-class _PulseStat extends StatelessWidget {
-  final String icon;
-  final String value;
-  final String label;
-  const _PulseStat({required this.icon, required this.value, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(icon, style: const TextStyle(fontSize: 13)),
-            const SizedBox(width: 4),
-            Text(
-              value,
-              style: AppTextStyles.headingMedium.copyWith(
-                color: AppColors.gold,
-                fontWeight: FontWeight.w700,
+  Widget _buildHeader(String name) {
+    final firstName = name.split(' ').first;
+    final hour = DateTime.now().hour;
+    final greeting = hour < 12
+        ? 'Good morning'
+        : hour < 17
+            ? 'Good afternoon'
+            : 'Good evening';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              RichText(
+                text: TextSpan(
+                  children: [
+                    TextSpan(
+                      text: '$greeting, ',
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    TextSpan(
+                      text: '$firstName 👋',
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 3),
+              const Text(
+                'Explore Opportunities',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          Stack(
+            children: [
+              GestureDetector(
+                onTap: () {},
+                child: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppColors.cardBg,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.divider),
+                  ),
+                  child: const Icon(
+                    Icons.notifications_outlined,
+                    color: AppColors.textPrimary,
+                    size: 20,
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 9,
+                top: 9,
+                child: Container(
+                  width: 7,
+                  height: 7,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      child: ctf.SearchBar(
+        hint: 'Search opportunities, events, clubs...',
+        controller: _searchCtrl,
+        onChanged: (v) => setState(() => _searchQuery = v),
+      ),
+    );
+  }
+
+  Widget _buildCategoryChips() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      child: SizedBox(
+        height: 34,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: _filters.length,
+          itemBuilder: (context, i) {
+            final filter = _filters[i];
+            final events = context.watch<EventsProvider>();
+            final isSelected = events.filterType == filter;
+            return GestureDetector(
+              onTap: () => events.setFilter(filter),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.cardBg,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.primary
+                        : AppColors.divider,
+                  ),
+                ),
+                child: Text(
+                  filter,
+                  style: TextStyle(
+                    color: isSelected
+                        ? Colors.white
+                        : AppColors.textSecondary,
+                    fontWeight: isSelected
+                        ? FontWeight.w700
+                        : FontWeight.w500,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            );
+          },
         ),
-        Text(label, style: AppTextStyles.labelMedium.copyWith(fontSize: 10)),
+      ),
+    );
+  }
+
+  Widget _buildFeaturedSection(EventsProvider events) {
+    final featured = events.featuredEvents;
+    if (featured.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('Featured', 'See all'),
+        SizedBox(
+          height: 190,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: featured.length,
+            itemBuilder: (context, i) => FeaturedEventCard(
+              event: featured[i],
+              onTap: () => _openDetail(context, featured[i].id),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
       ],
     );
   }
-}
 
-// ── Reusable empty state widget ────────────────────────────────────────────────
-class _EmptyState extends StatelessWidget {
-  final IconData icon;
-  final String   message;
-  final String   hint;
-  const _EmptyState({required this.icon, required this.message, required this.hint});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildSectionHeader(String title, String trailing) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
-      child: Column(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Icon(icon, color: AppColors.textMuted, size: 48),
-          const SizedBox(height: 12),
-          Text(message, style: AppTextStyles.headingMedium, textAlign: TextAlign.center),
-          const SizedBox(height: 4),
-          Text(hint,
-              style: AppTextStyles.labelMedium, textAlign: TextAlign.center),
+          Text(
+            title,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          Text(
+            trailing,
+            style: const TextStyle(
+                color: AppColors.primary, fontSize: 12),
+          ),
         ],
+      ),
+    );
+  }
+
+  void _openDetail(BuildContext context, String eventId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EventDetailScreen(eventId: eventId),
       ),
     );
   }
