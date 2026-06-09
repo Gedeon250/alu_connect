@@ -1,0 +1,267 @@
+import 'package:flutter/material.dart';
+import '../models/event.dart';
+import '../models/community.dart';
+import '../models/message.dart';
+import '../theme/app_theme.dart';
+
+// ─── Mock Events ──────────────────────────────────────────────────────────────
+final List<Event> mockEvents = [
+  Event(
+    id: '1',
+    title: 'ALU Entrepreneurship Pitch Night',
+    description:
+        'Showcase your startup idea, get feedback from mentors, and connect with fellow entrepreneurs. Open to all ALU students.',
+    category: 'Event',
+    date: 'May 24, 2026',
+    time: '06:00 PM – 09:00 PM',
+    location: 'Innovation Lab',
+    campus: 'Kigali Campus',
+    imageUrl: '',
+    tags: ['Startup', 'Networking'],
+    goingCount: 48,
+    interestedCount: 12,
+    isFeatured: true,
+  ),
+  Event(
+    id: '2',
+    title: 'AI for Social Impact Workshop',
+    description:
+        'Learn how AI tools can drive social impact in Africa. Hands-on session with group projects.',
+    category: 'Workshop',
+    date: 'Jun 5, 2026',
+    time: '09:00 AM – 01:00 PM',
+    location: 'Mauritius Campus Innovation Lab',
+    campus: 'Mauritius Campus',
+    imageUrl: '',
+    tags: ['Workshop', 'Tech'],
+    goingCount: 32,
+    interestedCount: 18,
+  ),
+  Event(
+    id: '3',
+    title: 'Design Thinking Bootcamp',
+    description:
+        'A two-day intensive on human-centered design, ideation, and prototyping.',
+    category: 'Workshop',
+    date: 'May 30, 2026',
+    time: '08:00 AM – 05:00 PM',
+    location: 'Collaboration Hub',
+    campus: 'Kigali Campus',
+    imageUrl: '',
+    tags: ['Design', 'Innovation'],
+    goingCount: 20,
+    interestedCount: 30,
+  ),
+  Event(
+    id: '4',
+    title: 'Sustainable Solutions Challenge',
+    description:
+        'Compete to solve real sustainability problems facing the African continent.',
+    category: 'Competition',
+    date: 'Apply by May 20, 2026',
+    time: 'All Day',
+    location: 'Main Hall',
+    campus: 'Mauritius Campus',
+    imageUrl: '',
+    tags: ['Competition', 'Sustainability'],
+    goingCount: 10,
+    interestedCount: 45,
+  ),
+  Event(
+    id: '5',
+    title: 'Campus Ambassador Program',
+    description:
+        'Represent ALU at community level. Leadership development and public speaking.',
+    category: 'Opportunity',
+    date: 'Apply by May 22, 2026',
+    time: 'Rolling',
+    location: 'All Campuses',
+    campus: 'All Campuses',
+    imageUrl: '',
+    tags: ['Leadership', 'Opportunity'],
+    goingCount: 5,
+    interestedCount: 60,
+  ),
+  Event(
+    id: '6',
+    title: 'ALU Climate Action Week',
+    description:
+        'A week of talks, panels, and workshops focused on climate change and Africa\'s response.',
+    category: 'Event',
+    date: 'May 26 – May 30, 2026',
+    time: 'All Day',
+    location: 'Main Campus',
+    campus: 'Kigali Campus',
+    imageUrl: '',
+    tags: ['Climate', 'Community'],
+    goingCount: 70,
+    interestedCount: 25,
+  ),
+  Event(
+    id: '7',
+    title: 'Build Your First MVP Workshop',
+    description:
+        'Step-by-step guide to building a minimum viable product using no-code tools.',
+    category: 'Workshop',
+    date: 'June 2, 2026',
+    time: '10:00 AM – 02:00 PM',
+    location: 'Tech Lab',
+    campus: 'Kigali Campus',
+    imageUrl: '',
+    tags: ['Startup', 'Tech'],
+    goingCount: 15,
+    interestedCount: 40,
+  ),
+  Event(
+    id: '8',
+    title: 'Community Clean Up',
+    description:
+        'Join the ALU community for a morning clean-up around campus. Gloves provided.',
+    category: 'Community',
+    date: 'May 18, 2026',
+    time: '08:00 AM – 11:00 AM',
+    location: 'Campus Grounds',
+    campus: 'Mauritius Campus',
+    imageUrl: '',
+    tags: ['Community', 'Social'],
+    goingCount: 35,
+    interestedCount: 10,
+  ),
+];
+
+// ─── Mock Communities ─────────────────────────────────────────────────────────
+final List<Community> mockCommunities = [
+  Community(
+    id: 'c1',
+    name: 'ALU Debate Society',
+    description: 'Sharpen your critical thinking and public speaking skills.',
+    memberCount: 124,
+    category: 'Leadership',
+    iconColor: AppColors.tagEvent,
+    iconEmoji: '🏛️',
+  ),
+  Community(
+    id: 'c2',
+    name: 'Entrepreneurship Club',
+    description: 'Build, learn, and grow with fellow entrepreneurs at ALU.',
+    memberCount: 250,
+    category: 'Startups',
+    iconColor: AppColors.tagOpportunity,
+    iconEmoji: '🚀',
+    isJoined: true,
+  ),
+  Community(
+    id: 'c3',
+    name: 'Women in Leadership',
+    description: 'Empowering women to lead boldly and authentically.',
+    memberCount: 180,
+    category: 'Leadership',
+    iconColor: const Color(0xFF3D1F3D),
+    iconEmoji: '👩‍💼',
+  ),
+  Community(
+    id: 'c4',
+    name: 'Tech & Innovation Hub',
+    description: 'Explore tech, build projects, and collaborate on ideas.',
+    memberCount: 210,
+    category: 'Tech',
+    iconColor: AppColors.tagEvent,
+    iconEmoji: '💻',
+  ),
+  Community(
+    id: 'c5',
+    name: 'ALU Writers Circle',
+    description: 'For storytellers, journalists, and creative writers at ALU.',
+    memberCount: 95,
+    category: 'Arts',
+    iconColor: AppColors.tagCompetition,
+    iconEmoji: '✍️',
+  ),
+  Community(
+    id: 'c6',
+    name: 'Travel Buddies',
+    description: 'Plan trips, share experiences, and explore Africa together.',
+    memberCount: 143,
+    category: 'Community',
+    iconColor: AppColors.tagOpportunity,
+    iconEmoji: '✈️',
+  ),
+];
+
+// ─── Mock Chat Previews ───────────────────────────────────────────────────────
+final List<ChatPreview> mockChats = [
+  ChatPreview(
+    id: 'ch1',
+    name: 'Entrepreneurship Club',
+    lastMessage: 'David: Don\'t forget the meeting at 5pm...',
+    time: '10:30 AM',
+    unreadCount: 3,
+    avatarEmoji: '🚀',
+  ),
+  ChatPreview(
+    id: 'ch2',
+    name: 'AI Workshop Group',
+    lastMessage: 'Fatima: Shared a file',
+    time: '9:45 AM',
+    unreadCount: 2,
+    avatarEmoji: '🤖',
+  ),
+  ChatPreview(
+    id: 'ch3',
+    name: 'Campus Leaders',
+    lastMessage: 'Jean: See you there!',
+    time: 'Yesterday',
+    unreadCount: 0,
+    avatarEmoji: '🏫',
+  ),
+  ChatPreview(
+    id: 'ch4',
+    name: 'Travel Buddies',
+    lastMessage: 'Sarah: Any updates?',
+    time: 'Yesterday',
+    unreadCount: 0,
+    avatarEmoji: '✈️',
+  ),
+  ChatPreview(
+    id: 'ch5',
+    name: 'ALU Debate Society',
+    lastMessage: 'Emmanuel: Great job!',
+    time: '2d ago',
+    unreadCount: 0,
+    avatarEmoji: '🏛️',
+  ),
+];
+
+// ─── Mock Messages (AI Workshop Group chat room) ──────────────────────────────
+final List<ChatMessage> mockMessages = [
+  ChatMessage(
+    id: 'm1',
+    senderName: 'Fatima',
+    content: 'Hey team! Don\'t forget our session tomorrow at 9am. See you there! 🚀',
+    timestamp: '9:15 AM',
+    isMe: false,
+  ),
+  ChatMessage(
+    id: 'm2',
+    senderName: 'David',
+    content: 'Got it! I\'ll bring my laptop.',
+    timestamp: '9:18 AM',
+    isMe: false,
+  ),
+  ChatMessage(
+    id: 'm3',
+    senderName: 'Me',
+    content: 'Can\'t wait! 🔥',
+    timestamp: '9:20 AM',
+    isMe: true,
+  ),
+  ChatMessage(
+    id: 'm4',
+    senderName: 'Jean',
+    content: 'Workshop Materials.pdf',
+    timestamp: '9:22 AM',
+    isMe: false,
+    hasAttachment: true,
+    attachmentName: 'Workshop Materials.pdf',
+  ),
+];
