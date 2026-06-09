@@ -1,3 +1,5 @@
+// Chats Screen — Implemented by Sheja Dorian (Member 5)
+// Features: Chat list, conversation view, message sending, unread badges
 import 'package:flutter/material.dart';
 import '../../models/message.dart';
 import '../../data/mock_data.dart';

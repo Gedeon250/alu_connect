@@ -1,3 +1,5 @@
+// Profile Screen — Implemented by Sheja Dorian (Member 5)
+// Features: User avatar, stats display, my posts, saved items, settings
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../theme/app_theme.dart';
