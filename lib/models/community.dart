@@ -23,3 +23,5 @@ class Community {
     this.isJoined = false,
   });
 }
+// container
+//TODO: Implement community container for state management and API interactions.
