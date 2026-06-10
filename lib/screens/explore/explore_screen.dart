@@ -19,9 +19,40 @@ class _ExploreScreenState extends State<ExploreScreen> {
   String _query = '';
   String _activeFilter = 'All';
 
+String _selectedCampus = 'All Campuses';
+final List<String> _campuses = [
+  'All Campuses',
+  'Kigali Campus',
+  'Mauritius Campus',
+];
+
+
   final List<String> _filters = [
     'All', 'Events', 'Opportunities', 'Hackathons', 'Workshops',
   ];
+ 
+ Widget _buildCampusFilter() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Row(
+        children: _campuses.map((campus) {
+          final selected = _selectedCampus == campus;
+          return GestureDetector(
+            onTap: () => setState(() => _selectedCampus = campus),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 5,
+              ),
+              child: Text(campus),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -56,14 +87,31 @@ class _ExploreScreenState extends State<ExploreScreen> {
       results = filtered;
     }
 
+    if (_selectedCampus != 'All Campuses') {
+  results = results
+      .where((e) => e.campus == _selectedCampus)
+      .toList();
+}
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeader(),
-            _buildFilters(),
+           _buildHeader(),
+           _buildFilters(),
+           _buildCampusFilter(),
+Padding(
+  padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+  child: Text(
+    '${results.length} result${results.length == 1 ? '' : 's'}',
+    style: const TextStyle(
+      color: AppColors.textMuted,
+      fontSize: 12,
+    ),
+  ),
+),
             Expanded(
               child: results.isEmpty
                   ? _buildEmpty()
@@ -107,24 +155,24 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 ),
               ),
               Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.divider),
-                ),
-                child: const Icon(Icons.tune_outlined,
-                    color: AppColors.textSecondary, size: 20),
-              ),
+                  width: 40,
+                  height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+           border: Border.all(color: AppColors.divider),
+             ),
+           child: const Icon(Icons.tune_outlined,
+            color: AppColors.textSecondary, size: 20),
+           ),
             ],
           ),
           const SizedBox(height: 12),
           ctf.SearchBar(
-            hint: 'Search events, hackathons, clubs...',
-            controller: _searchCtrl,
-            onChanged: (v) => setState(() => _query = v),
-          ),
+  hint: 'Search events, hackathons, clubs...',
+  controller: _searchCtrl,
+  onChanged: (v) => setState(() => _query = v),
+),
         ],
       ),
     );

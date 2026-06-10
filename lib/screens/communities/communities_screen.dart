@@ -17,7 +17,8 @@ class _CommunitiesScreenState extends State<CommunitiesScreen>
   late TabController _tabController;
   final TextEditingController _searchCtrl = TextEditingController();
   String _query = '';
-
+String _selectedCategory = 'All';
+final List<String> _categories = ['All', 'Technology', 'Business', 'Leadership', 'Social Impact', 'Academic'];
   @override
   void initState() {
     super.initState();
@@ -42,13 +43,20 @@ class _CommunitiesScreenState extends State<CommunitiesScreen>
           children: [
             _buildHeader(),
             _buildSearchBar(),
+            _buildCategoryChips(),
+            const SizedBox(height: 8),
             _buildTabs(),
             Expanded(
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _buildList(communities.search(_query),
-                      communities, showAll: true),
+                  _buildList(
+  communities.search(_query).where((c) =>
+    _selectedCategory == 'All' || c.category == _selectedCategory
+  ).toList(),
+  communities,
+  showAll: true,
+),
                   _buildList(
                     communities.myCommunities
                         .where((c) => c.name
@@ -81,17 +89,31 @@ class _CommunitiesScreenState extends State<CommunitiesScreen>
               fontWeight: FontWeight.w800,
             ),
           ),
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.divider),
-            ),
-            child: const Icon(Icons.add,
-                color: AppColors.primary, size: 22),
+          Consumer<CommunitiesProvider>(
+  builder: (context, provider, _) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    decoration: BoxDecoration(
+      color: AppColors.primary.withOpacity(0.15),
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.groups, size: 14, color: AppColors.primary),
+        const SizedBox(width: 4),
+        Text(
+          '${provider.myCommunities.length} joined',
+          style: const TextStyle(
+            color: AppColors.primary,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
           ),
+        ),
+      ],
+    ),
+  ),
+),
         ],
       ),
     );
@@ -120,6 +142,44 @@ class _CommunitiesScreenState extends State<CommunitiesScreen>
       tabs: const [Tab(text: 'All Clubs'), Tab(text: 'My Clubs')],
     );
   }
+
+Widget _buildCategoryChips() {
+  return SizedBox(
+    height: 36,
+    child: ListView.builder(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: _categories.length,
+      itemBuilder: (context, i) {
+        final cat = _categories[i];
+        final selected = _selectedCategory == cat;
+        return GestureDetector(
+          onTap: () => setState(() => _selectedCategory = cat),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            margin: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: selected ? AppColors.primary : AppColors.surface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: selected ? AppColors.primary : AppColors.divider,
+              ),
+            ),
+            child: Text(
+              cat,
+              style: TextStyle(
+                color: selected ? Colors.black : AppColors.textSecondary,
+                fontSize: 12,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+          ),
+        );
+      },
+    ),
+  );
+}
 
   Widget _buildList(
     List communities,
